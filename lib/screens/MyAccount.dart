@@ -1,12 +1,12 @@
+import 'package:Notelify/service/auth.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class MyAccount extends StatelessWidget {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final AuthServiceProvider _auth = AuthServiceProvider();
 
   final RegExp _emailRegex = new RegExp(
       r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$");
@@ -58,6 +58,7 @@ class MyAccount extends StatelessWidget {
                                   hintStyle: TextStyle(color: Colors.black54),
                                   filled: true,
                                   fillColor: Colors.white,
+                                  contentPadding: EdgeInsets.all(10),
                                   border: new OutlineInputBorder(
                                     borderRadius: new BorderRadius.circular(20),
                                   ),
@@ -83,6 +84,7 @@ class MyAccount extends StatelessWidget {
                                 controller: _passwordController,
                                 obscureText: true,
                                 decoration: InputDecoration(
+                                  contentPadding: EdgeInsets.all(10),
                                   prefixIcon: Icon(Icons.lock),
                                   hintStyle: TextStyle(color: Colors.black54),
                                   filled: true,
@@ -120,42 +122,97 @@ class MyAccount extends StatelessWidget {
                                 ButtonTheme(
                                     minWidth: 100,
                                     height: 50,
-                                    child: RaisedButton(
-                                      child: Text(
-                                        'Sign In',
-                                        style: TextStyle(fontSize: 20),
-                                      ),
-                                      color: Colors.white,
-                                      textColor: Colors.teal,
-                                      onPressed: () {
-                                        if (_formKey.currentState.validate()) {
-                                          print('Valid Input');
-                                        } else {
-                                          print('Invalid Input');
-                                        }
-                                      },
-                                    )),
+                                    child: Builder(
+                                        builder: (context) => RaisedButton(
+                                              child: Text(
+                                                'Sign In',
+                                                style: TextStyle(fontSize: 20),
+                                              ),
+                                              color: Colors.white,
+                                              textColor: Colors.teal,
+                                              onPressed: () async {
+                                                if (_formKey.currentState
+                                                    .validate()) {
+                                                  print('Valid Input');
+                                                  final dynamic user =
+                                                      await _auth.signIn(
+                                                          _emailController.text,
+                                                          _passwordController
+                                                              .text);
+                                                  if (user == 500) {
+                                                    Scaffold.of(context)
+                                                        .showSnackBar(SnackBar(
+                                                      content: Text(
+                                                          'Incorrect Email / Password.'),
+                                                      duration:
+                                                          Duration(seconds: 5),
+                                                    ));
+                                                    print(
+                                                        'Wrong Email Or Password');
+                                                  } else {
+                                                    print(user);
+                                                  }
+                                                } else {
+                                                  print('Invalid Input');
+                                                }
+                                              },
+                                            ))),
                                 ButtonTheme(
-                                  minWidth: 150,
-                                  height: 50,
-                                  child: RaisedButton(
-                                    child: Text(
-                                      'Register',
-                                      style: TextStyle(fontSize: 20),
-                                    ),
-                                    color: Colors.white,
-                                    textColor: Colors.teal,
-                                    onPressed: () async {
-                                      final FirebaseUser user = (await _auth
-                                              .createUserWithEmailAndPassword(
-                                                  email: _emailController.text,
-                                                  password:
-                                                      _passwordController.text))
-                                          .user;
-                                      print(user);
-                                    },
-                                  ),
-                                ),
+                                    minWidth: 150,
+                                    height: 50,
+                                    child: Builder(
+                                      builder: (context) => RaisedButton(
+                                        child: Text(
+                                          'Register',
+                                          style: TextStyle(fontSize: 20),
+                                        ),
+                                        color: Colors.white,
+                                        textColor: Colors.teal,
+                                        onPressed: () async {
+                                          if (_formKey.currentState
+                                              .validate()) {
+                                            print('Valid Input');
+                                            final dynamic user =
+                                                await _auth.register(
+                                                    _emailController.text,
+                                                    _passwordController.text);
+                                            if (user == 500) {
+                                              Scaffold.of(context)
+                                                  .showSnackBar(SnackBar(
+                                                content:
+                                                    Text('Unable To Register.'),
+                                                duration: Duration(seconds: 5),
+                                              ));
+                                              print('Unable To Register');
+                                            } else {
+                                              showDialog(
+                                                  context: context,
+                                                  builder:
+                                                      (BuildContext context) {
+                                                    return AlertDialog(
+                                                      title: new Text(
+                                                          'Welcome !!'),
+                                                      content: new Text(
+                                                          'You have registered successfully.'),
+                                                      actions: [
+                                                        new FlatButton(
+                                                            onPressed:
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop,
+                                                            child: new Text(
+                                                                "Close"))
+                                                      ],
+                                                    );
+                                                  });
+                                              print(user.uid);
+                                            }
+                                          } else {
+                                            print('Invalid Input');
+                                          }
+                                        },
+                                      ),
+                                    )),
                               ],
                             ),
                           ],
